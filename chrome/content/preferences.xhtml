@@ -1,0 +1,31 @@
+<vbox id="zotero-prefpane-scanscipdf">
+  <groupbox>
+    <label>
+      <html:h2>scansci-pdf</html:h2>
+    </label>
+    <vbox align="stretch">
+      <hbox align="center">
+        <label value="scansci-pdf 可执行文件路径" control="scanscipdf-executable-path"/>
+        <html:input id="scanscipdf-executable-path" type="text" flex="1"
+          preference="extensions.zotero.scanscipdf.executablePath"/>
+      </hbox>
+      <hbox align="center">
+        <label value="PDF 下载目录" control="scanscipdf-output-dir"/>
+        <html:input id="scanscipdf-output-dir" type="text" flex="1"
+          preference="extensions.zotero.scanscipdf.outputDir"/>
+      </hbox>
+      <separator class="thin"/>
+      <checkbox native="true" label="自动挂载 PDF"
+        preference="extensions.zotero.scanscipdf.autoAttach"/>
+      <checkbox native="true" label="跳过已有 PDF"
+        preference="extensions.zotero.scanscipdf.skipExistingPDF"/>
+      <checkbox native="true" label="自动添加 tag"
+        preference="extensions.zotero.scanscipdf.autoTag"/>
+      <hbox align="center">
+        <label value="批量下载间隔秒数" control="scanscipdf-batch-interval"/>
+        <html:input id="scanscipdf-batch-interval" type="number" min="0" step="1"
+          preference="extensions.zotero.scanscipdf.batchIntervalSeconds"/>
+      </hbox>
+    </vbox>
+  </groupbox>
+</vbox>
