@@ -1,109 +1,271 @@
-# scansci-pdf Zotero Helper
+下面是一个适合放到 GitHub README 的中英文双语版说明，支持用户快速理解插件功能与安装。基于你当前 README 内容整理优化。 ￼
 
-这是一个最小 Zotero 7 bootstrap 插件，不使用 webpack、React 或 TypeScript。
+scansci-pdf Zotero Helper
 
-功能：
+中文￼ | English￼
 
-- 在 Zotero 文献右键菜单中增加“用 scansci-pdf 下载 PDF”
-- 读取当前选中文献的 DOI
-- 从插件设置读取 scansci-pdf 可执行文件路径和 PDF 下载目录
-- 自动找到下载目录中的最新 PDF
-- 可选：将 PDF 作为附件挂载到当前文献
-- 可选：已有 PDF 时跳过下载
-- 可选：成功后给文献添加 `scansci-pdf` 标签
-- 支持多选文献批量下载，逐篇执行并统计成功、失败、跳过数量
+⸻
 
-## 设置
+中文说明
 
-安装后打开 Zotero 设置，在左侧选择 `scansci-pdf`。
+scansci-pdf Zotero Helper 是一个适用于 Zotero 7 的轻量级插件。
+
+它可以直接在 Zotero 中调用 scansci-pdf，自动下载 PDF，并挂载到当前文献条目。
+
+无需 webpack、React 或 TypeScript，结构简单，便于二次开发。
+
+⸻
+
+功能特点
+
+* 在 Zotero 文献右键菜单中增加：
+    用 scansci-pdf 下载 PDF
+* 自动读取当前文献 DOI
+* 调用本地 scansci-pdf 下载 PDF
+* 自动检测下载目录中的最新 PDF
+* 自动将 PDF 附加到当前文献（可选）
+* 已存在 PDF 时自动跳过（可选）
+* 下载成功后自动添加 scansci-pdf 标签（可选）
+* 支持多选文献批量下载
+* 支持下载间隔控制，降低请求频率
+
+⸻
+
+插件设置
+
+安装后：
+
+Zotero → Settings → scansci-pdf
 
 可配置：
 
-- scansci-pdf 可执行文件路径
-- PDF 下载目录
-- 是否自动挂载 PDF
-- 是否跳过已有 PDF
-- 是否自动添加 tag
-- 批量下载间隔秒数，默认 `20`
+* scansci-pdf 可执行文件路径
+* PDF 下载目录
+* 自动挂载 PDF
+* 跳过已有 PDF
+* 自动添加标签
+* 批量下载间隔（秒）
 
-## 安装 scansci-pdf
+默认间隔：
 
-本插件依赖外部命令行工具 `scansci-pdf`。插件默认读取：
+20 秒
 
-```text
+⸻
+
+安装 scansci-pdf
+
+本插件依赖外部命令行工具：
+
+scansci-pdf
+
+默认路径：
+
 ~/.local/bin/scansci-pdf
-```
 
-推荐使用 `uv tool` 安装：
+推荐使用 uv 安装：
 
-```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv tool install scansci-pdf
 uv tool update-shell
-```
 
-如果需要直接从 GitHub 安装最新代码：
+安装 GitHub 最新版本：
 
-```bash
 uv tool install git+https://github.com/Rimagination/scansci-pdf.git
-```
 
-也可以使用 `pipx`：
+也可使用：
 
-```bash
 pipx install scansci-pdf
-```
 
-安装后检查：
+安装完成后测试：
 
-```bash
 scansci-pdf --help
 scansci-pdf check
-```
 
-如果命令不在 `~/.local/bin/scansci-pdf`，请在 Zotero 的 `scansci-pdf` 设置页中修改“scansci-pdf 可执行文件路径”。
+如果路径不同，请在 Zotero 设置页中修改。
 
-## 构建
+⸻
 
-```bash
+构建插件
+
 ./build.sh
-```
 
-构建完成后会在当前目录生成：
+构建后生成：
 
-```text
 scansci.xpi
-```
 
-## 版本管理
+⸻
 
-版本号统一维护在 `VERSION` 文件中。
-
-发布新版本时：
-
-1. 修改 `VERSION`
-2. 更新 `CHANGELOG.md`
-3. 运行 `./build.sh`
-
-`build.sh` 会自动同步 `manifest.json` 版本号，生成 `update.json`，并打包 `scansci.xpi`。
-
-## 安装
+安装插件
 
 1. 打开 Zotero
-2. 进入 `Tools` → `Plugins`
-3. 点击齿轮按钮
-4. 选择 `Install Plugin From File`
-5. 选择当前目录下的 `scansci.xpi`
+2. 进入：
+    Tools → Plugins
+3. 点击右上角齿轮按钮
+4. 选择：
+    Install Plugin From File
+5. 选择：
+    scansci.xpi
 6. 重启 Zotero
 
-## 使用
+⸻
 
-在 Zotero 中右键一篇带 DOI 的文献，点击：
+使用方法
 
-```text
+右键带 DOI 的文献：
+
 用 scansci-pdf 下载 PDF
-```
 
-插件会下载 PDF 并自动挂载到该文献下。
+插件会：
 
-也可以多选文献后右键执行同一菜单。批量模式下插件会逐篇下载；无 DOI 的文献会自动跳过；每篇之间会按设置等待一段时间。
+1. 调用 scansci-pdf
+2. 下载 PDF
+3. 自动挂载附件
+
+⸻
+
+批量下载
+
+支持多选文献：
+
+* 无 DOI 自动跳过
+* 逐篇下载
+* 自动统计：
+    * 成功
+    * 失败
+    * 跳过
+
+并按设置自动等待间隔时间。
+
+⸻
+
+English
+
+scansci-pdf Zotero Helper is a lightweight plugin for Zotero 7.
+
+It allows Zotero to directly call scansci-pdf for automatic PDF downloading and attachment management.
+
+The plugin is intentionally minimal and does not use webpack, React, or TypeScript.
+
+⸻
+
+Features
+
+* Adds a Zotero context menu item:
+    Download PDF via scansci-pdf
+* Automatically reads DOI from selected items
+* Calls local scansci-pdf
+* Detects the newest downloaded PDF automatically
+* Optionally attaches PDF to the current item
+* Optionally skips items with existing PDFs
+* Optionally adds a scansci-pdf tag
+* Supports batch downloading
+* Supports configurable delay between downloads
+
+⸻
+
+Plugin Settings
+
+After installation:
+
+Zotero → Settings → scansci-pdf
+
+Configurable options:
+
+* scansci-pdf executable path
+* PDF download directory
+* Auto attach PDF
+* Skip existing PDF
+* Auto add tag
+* Batch download delay (seconds)
+
+Default delay:
+
+20 seconds
+
+⸻
+
+Install scansci-pdf
+
+This plugin depends on the external CLI tool:
+
+scansci-pdf
+
+Default path:
+
+~/.local/bin/scansci-pdf
+
+Recommended installation using uv:
+
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv tool install scansci-pdf
+uv tool update-shell
+
+Install latest GitHub version:
+
+uv tool install git+https://github.com/Rimagination/scansci-pdf.git
+
+Or use:
+
+pipx install scansci-pdf
+
+Verify installation:
+
+scansci-pdf --help
+scansci-pdf check
+
+If the executable path differs, update it in the Zotero plugin settings.
+
+⸻
+
+Build
+
+./build.sh
+
+Generated file:
+
+scansci.xpi
+
+⸻
+
+Install Plugin
+
+1. Open Zotero
+2. Go to:
+    Tools → Plugins
+3. Click the gear icon
+4. Choose:
+    Install Plugin From File
+5. Select:
+    scansci.xpi
+6. Restart Zotero
+
+⸻
+
+Usage
+
+Right-click a Zotero item with a DOI:
+
+Download PDF via scansci-pdf
+
+The plugin will:
+
+1. Call scansci-pdf
+2. Download the PDF
+3. Attach the PDF automatically
+
+⸻
+
+Batch Download
+
+Multiple items are supported.
+
+The plugin will:
+
+* Skip items without DOI
+* Process items one by one
+* Report:
+    * Success
+    * Failed
+    * Skipped
+
+A delay between downloads can be configured in settings.
