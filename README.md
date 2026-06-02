@@ -1,11 +1,6 @@
+[中文](#中文说明) | [English](#english)
 
-scansci-pdf Zotero Helper
-
-中文￼ | English￼
-
-⸻
-
-中文说明
+# 中文说明
 
 scansci-pdf Zotero Helper 是一个适用于 Zotero 7 的轻量级插件。
 
@@ -137,7 +132,7 @@ scansci.xpi
 
 ⸻
 
-English
+# English
 
 scansci-pdf Zotero Helper is a lightweight plugin for Zotero 7.
 
