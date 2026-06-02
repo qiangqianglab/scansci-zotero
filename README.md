@@ -1,4 +1,3 @@
-下面是一个适合放到 GitHub README 的中英文双语版说明，支持用户快速理解插件功能与安装。基于你当前 README 内容整理优化。 ￼
 
 scansci-pdf Zotero Helper
 
