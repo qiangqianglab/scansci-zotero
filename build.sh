@@ -20,7 +20,7 @@ printf '%s\n' \
   '          "applications": {' \
   '            "zotero": {' \
   '              "strict_min_version": "6.999",' \
-  '              "strict_max_version": "8.*"' \
+  '              "strict_max_version": "9.*"' \
   '            }' \
   '          }' \
   '        }' \
@@ -30,6 +30,6 @@ printf '%s\n' \
   '}' > update.json
 
 rm -f scansci.xpi
-zip -r scansci.xpi manifest.json bootstrap.js prefs.js chrome/content/preferences.xhtml README.md VERSION CHANGELOG.md update.json
+zip -r scansci.xpi manifest.json bootstrap.js prefs.js chrome/content/preferences.xhtml locale README.md VERSION CHANGELOG.md update.json
 
 echo "Built scansci.xpi version $VERSION"

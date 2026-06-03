@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "scansci-pdf Zotero Helper",
-  "version": "0.2.8",
+  "version": "0.2.14",
   "description": "Download PDFs with scansci-pdf and attach them to selected Zotero items.",
   "author": "zhuzhiqiang",
   "homepage_url": "https://github.com/qiangqianglab/scansci-zotero",
@@ -9,7 +9,7 @@
     "zotero": {
       "id": "scansci-pdf@zhuzhiqiang.local",
       "strict_min_version": "6.999",
-      "strict_max_version": "8.*",
+      "strict_max_version": "9.*",
       "update_url": "https://raw.githubusercontent.com/qiangqianglab/scansci-zotero/main/update.json"
     }
   }

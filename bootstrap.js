@@ -1,10 +1,13 @@
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var Services =
+  globalThis.Services ||
+  ChromeUtils.importESModule("resource://gre/modules/Services.sys.mjs").Services;
 
 var ScansciPDFPlugin = {
   id: "scansci-pdf@zhuzhiqiang.local",
   prefBranch: "extensions.zotero.scanscipdf.",
   menuItemID: "scansci-pdf-download-menuitem",
   separatorID: "scansci-pdf-download-separator",
+  managedMenuID: null,
   chromeHandle: null,
   rootURI: null,
   windowListener: null,
@@ -40,18 +43,22 @@ var ScansciPDFPlugin = {
       .getService(Components.interfaces.amIAddonManagerStartup);
     let manifestURI = Services.io.newURI(this.rootURI + "manifest.json");
     this.chromeHandle = aomStartup.registerChrome(manifestURI, [
-      ["content", "scanscipdf", this.rootURI + "chrome/content/"]
+      ["content", "scanscipdf", "chrome/content/"],
+      ["locale", "scanscipdf", "en-US", "locale/en-US/"],
+      ["locale", "scanscipdf", "zh-CN", "locale/zh-CN/"]
     ]);
   },
 
   registerPreferencesPane() {
-    Zotero.PreferencePanes.register({
-      id: "zotero-prefpane-scanscipdf",
-      pluginID: this.id,
-      rawLabel: "scansci-pdf",
-      src: "chrome://scanscipdf/content/preferences.xhtml",
-      defaultXUL: true
-    });
+    try {
+      Zotero.PreferencePanes.register({
+        pluginID: this.id,
+        rawLabel: "scansci-pdf",
+        src: "chrome://scanscipdf/content/preferences.xhtml"
+      });
+    } catch (error) {
+      Zotero.debug("scansci-pdf: failed to register preferences pane: " + error);
+    }
   },
 
   ensureDefaultPrefs() {
@@ -142,6 +149,24 @@ var ScansciPDFPlugin = {
   addMenuItem(win) {
     let doc = win.document;
     let menu = doc.getElementById("zotero-itemmenu");
+    if (!menu) {
+      return;
+    }
+
+    if (!menu._scanscipdfPopupHandler) {
+      menu._scanscipdfPopupHandler = () => {
+        this.ensureMenuItem(win);
+      };
+      menu.addEventListener("popupshowing", menu._scanscipdfPopupHandler);
+      menu.setAttribute("data-scanscipdf-listener", "true");
+    }
+
+    this.ensureMenuItem(win);
+  },
+
+  ensureMenuItem(win) {
+    let doc = win.document;
+    let menu = doc.getElementById("zotero-itemmenu");
     if (!menu || doc.getElementById(this.menuItemID)) {
       return;
     }
@@ -154,23 +179,21 @@ var ScansciPDFPlugin = {
     menuItem.className = "menuitem-iconic";
     menuItem.setAttribute("label", "用 scansci-pdf 下载 PDF");
     menuItem.addEventListener("command", () => {
-      let progress = this.createProgressWindow(win);
-      this.handleCommand(win, progress).catch(error => {
-        this.failProgress(progress, error && error.message ? error.message : String(error));
-        this.alert(win, "scansci-pdf 下载失败", error && error.message ? error.message : String(error));
-      });
-    });
-
-    menu.addEventListener("popupshowing", () => {
-      menuItem.hidden = false;
-      menuItem.disabled = false;
-      separator.hidden = false;
+      this.runCommand(win);
     });
 
     menu.appendChild(separator);
     menu.appendChild(menuItem);
 
     Zotero.debug("scansci-pdf: added item context menu entry");
+  },
+
+  runCommand(win, items) {
+    let progress = this.createProgressWindow(win);
+    this.handleCommand(win, progress, items).catch(error => {
+      this.failProgress(progress, error && error.message ? error.message : String(error));
+      this.alert(win, "scansci-pdf 下载失败", error && error.message ? error.message : String(error));
+    });
   },
 
   removeMenuItem(win) {
@@ -182,11 +205,19 @@ var ScansciPDFPlugin = {
     if (separator) {
       separator.remove();
     }
+    let menu = win.document.getElementById("zotero-itemmenu");
+    if (menu) {
+      if (menu._scanscipdfPopupHandler) {
+        menu.removeEventListener("popupshowing", menu._scanscipdfPopupHandler);
+        delete menu._scanscipdfPopupHandler;
+      }
+      menu.removeAttribute("data-scanscipdf-listener");
+    }
   },
 
-  async handleCommand(win, progress) {
+  async handleCommand(win, progress, selectedItems) {
     this.updateProgress(progress, "读取当前选中文献", 5);
-    let items = Array.from(win.ZoteroPane.getSelectedItems());
+    let items = selectedItems ? Array.from(selectedItems) : Array.from(win.ZoteroPane.getSelectedItems());
     if (!items.length) {
       throw new Error("未选中文献");
     }
@@ -432,6 +463,9 @@ var ScansciPDFPlugin = {
   },
 
   getSubprocess() {
+    if (ChromeUtils.importESModule) {
+      return ChromeUtils.importESModule("resource://gre/modules/Subprocess.sys.mjs").Subprocess;
+    }
     return ChromeUtils.import("resource://gre/modules/Subprocess.jsm").Subprocess;
   },
 
