@@ -2,7 +2,7 @@
 
 # 中文说明
 
-scansci-pdf Zotero Helper 是一个适用于 Zotero 7 的轻量级插件。
+scansci-pdf Zotero Helper 是一个适用于 Zotero 7-10 的轻量级插件。
 
 它可以直接在 Zotero 中调用 scansci-pdf，自动下载 PDF，并挂载到当前文献条目。
 
