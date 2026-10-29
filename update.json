@@ -3,12 +3,13 @@
     "scansci-pdf@zhuzhiqiang.local": {
       "updates": [
         {
-          "version": "0.2.14",
-          "update_link": "https://github.com/qiangqianglab/scansci-zotero/releases/download/v0.2.14/scansci.xpi",
+          "version": "0.3.2",
+          "update_link": "https://github.com/qiangqianglab/scansci-zotero/releases/download/v0.3.2/scansci.xpi",
+          "update_hash": "sha256:a027cffeab19be0c909276a120aa73f91b1f363cd0b296d0ff5e7f8f399cf9bb",
           "applications": {
             "zotero": {
-              "strict_min_version": "6.999",
-              "strict_max_version": "9.*"
+              "strict_min_version": "7.0",
+              "strict_max_version": "10.0.*"
             }
           }
         }

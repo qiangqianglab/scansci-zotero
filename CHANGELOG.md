@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.2
+
+- Prefer the exact PDF path reported by scansci-pdf instead of selecting an unrelated recent file.
+- Reject and remove unverified `CrossrefPage` results, which can incorrectly return a PDF linked from an article's references.
+- Reject cached PDF paths outside the configured download directory.
+- Report the rejected source in batch progress and failure summaries without attaching or tagging the item.
+
+## 0.3.1
+
+- Fix a blank Zotero 10 item-context-menu entry by assigning its label directly when the menu is shown instead of depending on unresolved Fluent localization.
+
+## 0.3.0
+
+- Add Zotero 10 compatibility with `strict_max_version` set to `10.0.*` while retaining Zotero 7 support.
+- Use the official `Zotero.MenuManager` API on Zotero 10 and retain the DOM menu fallback for Zotero 7-9.
+- Load the preferences pane directly from the plugin `rootURI` and remove unnecessary runtime chrome registration.
+- Remove the redundant native window listener and rely on Zotero bootstrap window hooks.
+- Add a Zotero 10 compatibility report and include a SHA-256 hash in `update.json`.
+
 ## 0.2.14
 
 - 修复 Zotero 9 条目右键菜单可能被重建后插件菜单项丢失的问题：在每次 `zotero-itemmenu` 弹出前检查并恢复菜单项，同时避免重复绑定监听。

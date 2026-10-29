@@ -16,7 +16,8 @@ scansci-pdf Zotero Helper 是一个适用于 Zotero 7-10 的轻量级插件。
     用 scansci-pdf 下载 PDF
 * 自动读取当前文献 DOI
 * 调用本地 scansci-pdf 下载 PDF
-* 自动检测下载目录中的最新 PDF
+* 优先使用 scansci-pdf 返回的精确 PDF 路径，兼容旧版最新文件检测
+* 拦截并删除 CrossrefPage 来源的未验证 PDF，避免误挂载参考文献
 * 自动将 PDF 附加到当前文献（可选）
 * 已存在 PDF 时自动跳过（可选）
 * 下载成功后自动添加 scansci-pdf 标签（可选）
@@ -134,7 +135,7 @@ scansci.xpi
 
 # English
 
-scansci-pdf Zotero Helper is a lightweight plugin for Zotero 7.
+scansci-pdf Zotero Helper is a lightweight plugin for Zotero 7-10.
 
 It allows Zotero to directly call scansci-pdf for automatic PDF downloading and attachment management.
 
@@ -148,7 +149,8 @@ Features
     Download PDF via scansci-pdf
 * Automatically reads DOI from selected items
 * Calls local scansci-pdf
-* Detects the newest downloaded PDF automatically
+* Uses the exact PDF path returned by scansci-pdf, with a newest-file fallback for older versions
+* Rejects and removes unverified CrossrefPage PDFs to prevent incorrect reference attachments
 * Optionally attaches PDF to the current item
 * Optionally skips items with existing PDFs
 * Optionally adds a scansci-pdf tag

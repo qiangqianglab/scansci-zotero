@@ -1,16 +1,10 @@
-var Services =
-  globalThis.Services ||
-  ChromeUtils.importESModule("resource://gre/modules/Services.sys.mjs").Services;
-
 var ScansciPDFPlugin = {
   id: "scansci-pdf@zhuzhiqiang.local",
   prefBranch: "extensions.zotero.scanscipdf.",
   menuItemID: "scansci-pdf-download-menuitem",
   separatorID: "scansci-pdf-download-separator",
   managedMenuID: null,
-  chromeHandle: null,
   rootURI: null,
-  windowListener: null,
   defaultPrefs: {
     executablePath: "~/.local/bin/scansci-pdf",
     outputDir: "~/Downloads/papers",
@@ -21,44 +15,79 @@ var ScansciPDFPlugin = {
   },
 
   startup(data) {
-    this.rootURI = data.rootURI || data.resourceURI.spec;
-    this.registerChrome();
+    this.rootURI = data.rootURI;
     this.ensureDefaultPrefs();
     this.registerPreferencesPane();
-    this.addToExistingWindows();
-    this.registerWindowListener();
-  },
-
-  shutdown() {
-    this.unregisterWindowListener();
-    this.removeFromExistingWindows();
-    if (this.chromeHandle) {
-      this.chromeHandle.destruct();
-      this.chromeHandle = null;
+    if (!this.registerManagedMenu()) {
+      this.addToExistingWindows();
     }
   },
 
-  registerChrome() {
-    let aomStartup = Components.classes["@mozilla.org/addons/addon-manager-startup;1"]
-      .getService(Components.interfaces.amIAddonManagerStartup);
-    let manifestURI = Services.io.newURI(this.rootURI + "manifest.json");
-    this.chromeHandle = aomStartup.registerChrome(manifestURI, [
-      ["content", "scanscipdf", "chrome/content/"],
-      ["locale", "scanscipdf", "en-US", "locale/en-US/"],
-      ["locale", "scanscipdf", "zh-CN", "locale/zh-CN/"]
-    ]);
+  shutdown() {
+    this.unregisterManagedMenu();
+    this.removeFromExistingWindows();
   },
 
   registerPreferencesPane() {
     try {
       Zotero.PreferencePanes.register({
         pluginID: this.id,
-        rawLabel: "scansci-pdf",
-        src: "chrome://scanscipdf/content/preferences.xhtml"
+        src: this.rootURI + "chrome/content/preferences.xhtml"
       });
     } catch (error) {
       Zotero.debug("scansci-pdf: failed to register preferences pane: " + error);
     }
+  },
+
+  registerManagedMenu() {
+    if (!this.isZotero10OrLater()
+        || !Zotero.MenuManager
+        || typeof Zotero.MenuManager.registerMenu !== "function") {
+      return false;
+    }
+
+    try {
+      this.managedMenuID = Zotero.MenuManager.registerMenu({
+        menuID: this.menuItemID,
+        pluginID: this.id,
+        target: "main/library/item",
+        menus: [
+          {
+            menuType: "menuitem",
+            onShowing: (event, context) => {
+              if (context.menuElem) {
+                context.menuElem.label = "用 scansci-pdf 下载 PDF";
+              }
+            },
+            onCommand: (event, context) => {
+              let win = event?.target?.ownerGlobal || Zotero.getMainWindow();
+              let items = context?.items ? Array.from(context.items) : null;
+              this.runCommand(win, items);
+            }
+          }
+        ]
+      });
+      Zotero.debug("scansci-pdf: registered Zotero 10 item context menu entry");
+      return !!this.managedMenuID;
+    } catch (error) {
+      this.managedMenuID = null;
+      Zotero.logError(error);
+      return false;
+    }
+  },
+
+  unregisterManagedMenu() {
+    if (!this.managedMenuID
+        || !Zotero.MenuManager
+        || typeof Zotero.MenuManager.unregisterMenu !== "function") {
+      return;
+    }
+    Zotero.MenuManager.unregisterMenu(this.managedMenuID);
+    this.managedMenuID = null;
+  },
+
+  isZotero10OrLater() {
+    return parseInt(Zotero.version, 10) >= 10;
   },
 
   ensureDefaultPrefs() {
@@ -117,33 +146,6 @@ var ScansciPDFPlugin = {
       }
     }
     return windows;
-  },
-
-  registerWindowListener() {
-    this.windowListener = {
-      onOpenWindow: xulWindow => {
-        let win = xulWindow.docShell.domWindow;
-        win.addEventListener(
-          "load",
-          () => {
-            if (win.ZoteroPane) {
-              this.addMenuItem(win);
-            }
-          },
-          { once: true }
-        );
-      },
-      onCloseWindow: () => {},
-      onWindowTitleChange: () => {}
-    };
-    Services.wm.addListener(this.windowListener);
-  },
-
-  unregisterWindowListener() {
-    if (this.windowListener) {
-      Services.wm.removeListener(this.windowListener);
-      this.windowListener = null;
-    }
   },
 
   addMenuItem(win) {
@@ -276,16 +278,30 @@ var ScansciPDFPlugin = {
 
     this.updateProgress(progress, prefix + "调用 scansci-pdf 下载 PDF", 35, line);
     let downloadStartTime = Date.now();
-    await this.runScansciPDF(doi, settings, progress, line);
+    let downloadResult = await this.runScansciPDF(doi, settings, progress, line);
 
     this.updateProgress(progress, prefix + "查找下载完成的 PDF", 65, line);
-    let pdfPath = this.findLatestPDF(settings.outputDir, downloadStartTime - 2000);
+    if (downloadResult.pdfPath
+        && !this.isPDFInOutputDirectory(downloadResult.pdfPath, settings.outputDir)) {
+      throw new Error("scansci-pdf 返回了下载目录之外的 PDF，已阻止挂载");
+    }
+    let pdfPath = downloadResult.pdfPath
+      || this.findLatestPDF(settings.outputDir, downloadStartTime - 2000);
     if (!pdfPath) {
       throw new Error("未在下载目录中找到 PDF");
     }
 
     this.updateProgress(progress, prefix + "等待 PDF 文件写入稳定", 75, line);
     await this.waitForStableFile(pdfPath);
+
+    this.updateProgress(progress, prefix + "校验 PDF 下载来源", 80, line);
+    if (this.isUntrustedDownloadSource(downloadResult.source)) {
+      await this.removeFile(pdfPath);
+      throw new Error(
+        "下载来源 " + downloadResult.source
+        + " 可能误抓参考文献 PDF，已删除候选文件并阻止自动挂载"
+      );
+    }
 
     if (settings.autoAttach) {
       this.updateProgress(progress, prefix + "挂载 PDF 到 Zotero 文献", 85, line);
@@ -328,6 +344,52 @@ var ScansciPDFPlugin = {
     if (result.exitCode !== 0) {
       let details = stderr || stdout || "scansci-pdf 执行失败";
       throw new Error(details.trim());
+    }
+
+    let downloadResult = this.parseScansciOutput(stdout, stderr);
+    Zotero.debug(
+      "scansci-pdf: result source=" + (downloadResult.source || "unknown")
+      + " path=" + (downloadResult.pdfPath || "unknown")
+    );
+    return downloadResult;
+  },
+
+  parseScansciOutput(stdout, stderr) {
+    let output = String(stdout || "") + "\n" + String(stderr || "");
+    output = output.replace(/\x1B\[[0-?]*[ -\/]*[@-~]/g, "");
+
+    let sourceMatch = output.match(/^\s*(?:\[INFO\]\s*)?Source:\s*(.+?)\s*$/im);
+    let pathMatches = output.matchAll(
+      /^\s*(?:\[INFO\]\s*)?(?:OK|Saved):\s*(.+?\.pdf)\s*$/gim
+    );
+    let pdfPath = null;
+    for (let match of pathMatches) {
+      pdfPath = match[1].trim().replace(/^["']|["']$/g, "");
+    }
+
+    return {
+      source: sourceMatch ? sourceMatch[1].trim() : "",
+      pdfPath
+    };
+  },
+
+  isUntrustedDownloadSource(source) {
+    return String(source || "").trim().toLowerCase() === "crossrefpage";
+  },
+
+  isPDFInOutputDirectory(path, outputDir) {
+    try {
+      let file = Components.classes["@mozilla.org/file/local;1"]
+        .createInstance(Components.interfaces.nsIFile);
+      let dir = Components.classes["@mozilla.org/file/local;1"]
+        .createInstance(Components.interfaces.nsIFile);
+      file.initWithPath(path);
+      dir.initWithPath(outputDir);
+      return file.parent
+        && file.parent.path === dir.path
+        && /\.pdf$/i.test(file.leafName);
+    } catch (error) {
+      return false;
     }
   },
 
@@ -464,7 +526,11 @@ var ScansciPDFPlugin = {
 
   getSubprocess() {
     if (ChromeUtils.importESModule) {
-      return ChromeUtils.importESModule("resource://gre/modules/Subprocess.sys.mjs").Subprocess;
+      try {
+        return ChromeUtils.importESModule("resource://gre/modules/Subprocess.sys.mjs").Subprocess;
+      } catch (error) {
+        Zotero.debug("scansci-pdf: Subprocess ESM unavailable, trying Zotero 7 JSM fallback");
+      }
     }
     return ChromeUtils.import("resource://gre/modules/Subprocess.jsm").Subprocess;
   },
@@ -558,11 +624,15 @@ function startup(data, reason) {
 }
 
 function onMainWindowLoad({ window }, reason) {
-  ScansciPDFPlugin.addMenuItem(window);
+  if (!ScansciPDFPlugin.managedMenuID) {
+    ScansciPDFPlugin.addMenuItem(window);
+  }
 }
 
 function onMainWindowUnload({ window }, reason) {
-  ScansciPDFPlugin.removeMenuItem(window);
+  if (!ScansciPDFPlugin.managedMenuID) {
+    ScansciPDFPlugin.removeMenuItem(window);
+  }
 }
 
 function shutdown(data, reason) {
